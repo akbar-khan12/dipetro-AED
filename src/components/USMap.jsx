@@ -17,7 +17,7 @@ const USMap = () => {
     getStatesList().then(setStates);
   }, []);
 
-  // Compute each state's label position (center of its SVG path)
+  // Compute label positions for each path
   useEffect(() => {
     if (!svgRef.current) return;
     const paths = svgRef.current.querySelectorAll("path[id]");
@@ -26,16 +26,12 @@ const USMap = () => {
     const positions = Array.from(paths).map((path) => {
       const id = path.getAttribute("id");
       const box = path.getBBox();
-      return {
-        id,
-        x: box.x + box.width / 2,
-        y: box.y + box.height / 2,
-      };
+      return { id, x: box.x + box.width / 2, y: box.y + box.height / 2 };
     });
     setLabelPositions(positions);
   }, [states]);
 
-  // Set initial fill and hover effects
+  // Set default styles
   useEffect(() => {
     const paths = svgRef.current?.querySelectorAll("path");
     if (!paths) return;
@@ -43,15 +39,13 @@ const USMap = () => {
       p.style.fill = "#f2e9e6";
       p.style.stroke = "#ffffff";
       p.style.strokeWidth = "1";
-      p.style.transition = "fill 0.2s ease";
+      p.style.transition = "fill 0.25s ease";
     });
   }, []);
 
   const handleMouseEnter = (e) => {
     const id = e.target.id;
-    const state = states.find(
-      (s) => s.abbreviation === id || s.name === id
-    );
+    const state = states.find((s) => s.abbreviation === id || s.name === id);
     if (state) setHoveredState(state);
   };
 
@@ -66,46 +60,63 @@ const USMap = () => {
   };
 
   const handleMouseLeave = (e) => {
-    if (e.relatedTarget && svgRef.current?.contains(e.relatedTarget)) return;
+    // If cursor is still inside the SVG, do nothing
+    if (svgRef.current && svgRef.current.contains(e.relatedTarget)) return;
+    // Otherwise, clear hovered state and tooltip
     setHoveredState(null);
   };
 
   const handleClick = (e) => {
     const id = e.target.id;
-    const state = states.find(
-      (s) => s.abbreviation === id || s.name === id
-    );
+    const state = states.find((s) => s.abbreviation === id || s.name === id);
     if (state) navigate(`/aed-laws/${state.slug}`);
   };
 
   const colorPalette = [
-    "#FADADD", "#F5C6AA", "#F2B6A0", "#F0AFA0", "#F3CBBE",
-    "#FADCD9", "#F7C6C7", "#F9D6C1", "#F6B7A9", "#EFB7B3"
+    "#FADADD",
+    "#F5C6AA",
+    "#F2B6A0",
+    "#F0AFA0",
+    "#F3CBBE",
+    "#FADCD9",
+    "#F7C6C7",
+    "#F9D6C1",
+    "#F6B7A9",
+    "#EFB7B3",
   ];
 
   const getRandomColor = (index) => colorPalette[index % colorPalette.length];
 
   return (
-    <div ref={containerRef} className="relative bg-transparent overflow-hidden">
-      <svg
-        ref={svgRef}
-        viewBox="0 0 959 593"
-        xmlns="http://www.w3.org/2000/svg"
-        className="w-full h-auto max-w-[1200px]"
-        style={{ cursor: "pointer" }}
+    <div
+      ref={containerRef}
+      className="relative flex justify-center items-center bg-transparent overflow-hidden py-12 px-8"
+    >
+      <div
+        className="relative w-full max-w-[1500px] -translate-x-10 sm:-translate-x-16 md:-translate-x-20 lg:-translate-x-28"
+        style={{
+          transformOrigin: "center",
+          scale: "1.25", // makes map larger
+        }}
       >
-        {/* Render the US Map */}
-        <USMapSVG
+        <svg
+          ref={svgRef}
+          viewBox="0 0 959 593"
+          xmlns="http://www.w3.org/2000/svg"
           className="w-full h-auto"
-          onMouseOver={handleMouseEnter}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          onClick={handleClick}
-        />
-
-        {/* Path styles */}
-        <style>
-          {`
+          style={{ cursor: "pointer" }}
+          onMouseLeave={handleMouseLeave} // ✅ ensure this is here
+        >
+          <USMapSVG
+            className="w-full h-auto"
+            onMouseOver={handleMouseEnter}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onClick={handleClick}
+          />
+          {/* Path styles */}
+          <style>
+            {`
             path {
               transition: fill 0.25s ease;
               stroke: #fff;
@@ -115,54 +126,57 @@ const USMap = () => {
               fill: #e3b5aa !important;
             }
           `}
-        </style>
+          </style>
 
-        {/* Assign random color to each state */}
-        {Array.from({ length: 51 }).map((_, i) => (
-          <style key={i}>{`path:nth-of-type(${i + 1}) { fill: ${getRandomColor(i)}; }`}</style>
-        ))}
+          {/* Assign random color to each state */}
+          {Array.from({ length: 51 }).map((_, i) => (
+            <style key={i}>{`path:nth-of-type(${
+              i + 1
+            }) { fill: ${getRandomColor(i)}; }`}</style>
+          ))}
 
-        {/* Add text labels */}
-        {labelPositions.map((pos) => {
-          const st = states.find(
-            (s) => s.abbreviation === pos.id || s.name === pos.id
-          );
-          if (!st) return null;
-          const shortLabel =
-            st.abbreviation ||
-            `${st.name[0]}${st.name[st.name.length - 1]}`.toUpperCase();
-          return (
-            <text
-              key={pos.id}
-              x={pos.x}
-              y={pos.y}
-              textAnchor="middle"
-              fontSize="11"
-              fill="#4a3e39"
-              fontWeight="600"
-              pointerEvents="none"
-            >
-              {shortLabel}
-            </text>
-          );
-        })}
-      </svg>
+          {/* Add text labels */}
+          {labelPositions.map((pos) => {
+            const st = states.find(
+              (s) => s.abbreviation === pos.id || s.name === pos.id
+            );
+            if (!st) return null;
+            const shortLabel =
+              st.abbreviation ||
+              `${st.name[0]}${st.name[st.name.length - 1]}`.toUpperCase();
+            return (
+              <text
+                key={pos.id}
+                x={pos.x}
+                y={pos.y}
+                textAnchor="middle"
+                fontSize="7"
+                fill="#4a3e39"
+                fontWeight="600"
+                pointerEvents="none"
+              >
+                {shortLabel}
+              </text>
+            );
+          })}
+        </svg>
 
-      {/* Tooltip (non-interactive, smooth follow) */}
-      {hoveredState && (
-        <div
-          className="absolute bg-black text-white text-xs px-2 py-1 rounded shadow-md"
-          style={{
-            top: tooltip.y,
-            left: tooltip.x,
-            pointerEvents: "none",
-            transform: "translate(-50%, -100%)",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {hoveredState.name}
-        </div>
-      )}
+        {/* Tooltip */}
+        {hoveredState && (
+          <div
+            className="absolute bg-black text-white text-xs px-2 py-1 rounded shadow-md"
+            style={{
+              top: tooltip.y,
+              left: tooltip.x,
+              pointerEvents: "none",
+              transform: "translate(-50%, -100%)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {hoveredState.name}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getStatesList } from "../api/aedLawsApi";
 import USMap from "../components/USMap";
-import { MapPin, Search } from "lucide-react";
+import { MapPin, Search, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const StatesListPage = () => {
   const [states, setStates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,19 +27,26 @@ const StatesListPage = () => {
     fetchStates();
   }, []);
 
-  // Filtered + prioritized list (searched first)
-  const filteredStates = [...states].sort((a, b) => {
-    if (!searchTerm) return a.name.localeCompare(b.name);
-    const aMatch = a.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const bMatch = b.name.toLowerCase().includes(searchTerm.toLowerCase());
-    if (aMatch && !bMatch) return -1;
-    if (!aMatch && bMatch) return 1;
-    return a.name.localeCompare(b.name);
-  });
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const handleSelect = (e) => {
-    const slug = e.target.value;
-    if (slug) navigate(`/aed-laws/${slug}`);
+  // Filter states based on search term
+  const filteredStates = states.filter((s) =>
+    s.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSelect = (slug) => {
+    navigate(`/aed-laws/${slug}`);
+    setDropdownOpen(false);
+    setSearchTerm("");
   };
 
   return (
@@ -52,49 +61,96 @@ const StatesListPage = () => {
             AED Laws by State
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
-            Click on any state to view detailed information about AED requirements and regulations
+            Click on any state to view detailed information about AED
+            requirements and regulations
           </p>
 
-          {/* 🔍 Searchable dropdown */}
-          <div className="relative inline-block w-full sm:w-80">
-            <div className="flex items-center bg-white border border-gray-300 rounded-lg shadow-sm">
-              <Search className="ml-3 text-gray-400" size={18} />
-              <input
-                type="text"
-                placeholder="Search state..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 rounded-r-lg focus:outline-none text-sm"
+          {/* 🔽 Choose State Dropdown */}
+          <div
+            className="relative inline-block w-full sm:w-80"
+            ref={dropdownRef}
+          >
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex justify-between items-center w-full border border-transparent text-white rounded-lg px-4 py-2 shadow-sm 
+             bg-[#301a41] hover:bg-[#3b2355] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#301a41]"
+            >
+              <span className="font-medium tracking-wide">
+                Choose your state
+              </span>
+              <ChevronDown
+                size={18}
+                className={`ml-2 transform transition-transform ${
+                  dropdownOpen ? "rotate-180" : ""
+                }`}
               />
-            </div>
+            </button>
 
-            {searchTerm && (
-              <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {filteredStates.length > 0 ? (
-                  filteredStates.map((s) => (
-                    <div
-                      key={s.slug}
-                      onClick={() => navigate(`/aed-laws/${s.slug}`)}
-                      className="px-3 py-2 hover:bg-red-50 cursor-pointer text-sm text-gray-700"
-                    >
-                      {s.name}
+            {dropdownOpen && (
+              <div className="absolute z-10 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-80 overflow-y-auto">
+                <div className="sticky top-0 bg-white border-b border-gray-200 p-2 flex items-center">
+                  <Search className="text-gray-400 ml-2" size={16} />
+                  <input
+                    type="text"
+                    placeholder="Search state..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-2 py-1 ml-2 text-sm rounded focus:outline-none"
+                  />
+                </div>
+
+                <div className="py-1">
+                  {filteredStates.length > 0 ? (
+                    filteredStates.map((s) => (
+                      <div
+                        key={s.slug}
+                        onClick={() => handleSelect(s.slug)}
+                        className="px-4 py-2 hover:bg-red-50 cursor-pointer text-gray-700 text-sm"
+                      >
+                        {s.name}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-gray-500 text-sm">
+                      No results found
                     </div>
-                  ))
-                ) : (
-                  <div className="px-3 py-2 text-gray-500 text-sm">No results found</div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
         </div>
+        {/* AED Legislation Overview */}
+        <div className="max-w-3xl mx-auto text-center mt-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+            AED Legislation Summaries and Requirements by State
+          </h2>
+          <p className="text-gray-600 leading-relaxed text-base sm:text-lg">
+            To help improve Sudden Cardiac Arrest outcomes and encourage groups
+            to buy AEDs, all 50 states have “Good Samaritan” legislation in
+            place to offer civil liability protection for those who buy or use
+            them. Additionally, some states have additional laws requiring AEDs
+            for certain facility types, like schools, gyms, or large buildings.
+          </p>
+          <p className="text-gray-600 leading-relaxed text-base sm:text-lg mt-4">
+            Each state’s laws vary significantly. It’s important to understand
+            these regulations to know if you must have an AED and how to
+            maintain it properly, to maximize the value of liability protections
+            available.
+          </p>
+          <p className="text-gray-600 leading-relaxed text-base sm:text-lg mt-4">
+            Click on your state to learn about the AED requirements and
+            protections available to you.
+          </p>
+        </div>
 
         {/* Map */}
         {loading ? (
-          <div className="flex items-center justify-center h-96">
+          <div className="flex items-center justify-center h-96 pt-5">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
           </div>
         ) : (
-          <div className="w-full h-[800px]">
+          <div className="w-full h-auto">
             <USMap />
           </div>
         )}
@@ -107,10 +163,10 @@ const StatesListPage = () => {
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-y-3 text-sm sm:text-base text-gray-800">
-              {filteredStates.map((s) => (
+              {states.map((s) => (
                 <div
                   key={s.slug}
-                  onClick={() => navigate(`/aed-laws/${s.slug}`)}
+                  onClick={() => handleSelect(s.slug)}
                   className="flex items-center gap-2 hover:text-red-600 cursor-pointer"
                 >
                   <MapPin className="w-4 h-4 text-red-500" />
@@ -130,12 +186,16 @@ const StatesListPage = () => {
               <div className="text-gray-700">States with AED legislation</div>
             </div>
             <div className="p-6 bg-blue-50 rounded-lg">
-              <div className="text-3xl font-bold text-blue-600 mb-2">10,000+</div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">
+                10,000+
+              </div>
               <div className="text-gray-700">Lives saved annually by AEDs</div>
             </div>
             <div className="p-6 bg-green-50 rounded-lg">
               <div className="text-3xl font-bold text-green-600 mb-2">90%</div>
-              <div className="text-gray-700">Survival rate with immediate AED use</div>
+              <div className="text-gray-700">
+                Survival rate with immediate AED use
+              </div>
             </div>
           </div>
         </div>
