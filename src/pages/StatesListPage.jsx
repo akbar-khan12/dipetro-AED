@@ -58,22 +58,22 @@ const StatesListPage = () => {
             <MapPin className="w-12 h-12 text-red-600" />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            AED Laws by State
+           AED State Laws
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
             Click on any state to view detailed information about AED
             requirements and regulations
           </p>
 
-          {/* 🔽 Choose State Dropdown */}
+          {/* Dropdown */}
           <div
-            className="relative inline-block w-full sm:w-80"
+            className="relative inline-block w-full sm:w-60"
             ref={dropdownRef}
           >
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex justify-between items-center w-full border border-transparent text-white rounded-lg px-4 py-2 shadow-sm 
-             bg-[#301a41] hover:bg-[#3b2355] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#301a41]"
+              className="flex justify-between items-center w-full border border-transparent text-white rounded-lg px-4 py-2 shadow-sm
+bg-[#111686] hover:bg-[#0d0f5c] transition-all duration-200"
             >
               <span className="font-medium tracking-wide">
                 Choose your state
@@ -105,9 +105,12 @@ const StatesListPage = () => {
                       <div
                         key={s.slug}
                         onClick={() => handleSelect(s.slug)}
-                        className="px-4 py-2 hover:bg-red-50 cursor-pointer text-gray-700 text-sm"
+                        className="px-4 py-2 hover:bg-[#d6dcea] cursor-pointer text-gray-700 text-sm hover:text-[#111686]"
                       >
-                        {s.name}
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-[#111686]" />
+                          {s.name}
+                        </div>
                       </div>
                     ))
                   ) : (
@@ -167,9 +170,9 @@ const StatesListPage = () => {
                 <div
                   key={s.slug}
                   onClick={() => handleSelect(s.slug)}
-                  className="flex items-center gap-2 hover:text-red-600 cursor-pointer"
+                  className="flex items-center gap-2 hover:text-[#111686] cursor-pointer"
                 >
-                  <MapPin className="w-4 h-4 text-red-500" />
+                 <MapPin className="w-4 h-4 text-blue-600" />
                   {s.name} AED laws
                 </div>
               ))}

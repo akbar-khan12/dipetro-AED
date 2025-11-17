@@ -1,3 +1,5 @@
+// Updated USMap component using colors #111686 (hover) and #d6dcea (default background fill)
+
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStatesList } from "../api/aedLawsApi";
@@ -12,12 +14,10 @@ const USMap = () => {
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch states list from API
   useEffect(() => {
     getStatesList().then(setStates);
   }, []);
 
-  // Compute label positions for each path
   useEffect(() => {
     if (!svgRef.current) return;
     const paths = svgRef.current.querySelectorAll("path[id]");
@@ -31,12 +31,11 @@ const USMap = () => {
     setLabelPositions(positions);
   }, [states]);
 
-  // Set default styles
   useEffect(() => {
     const paths = svgRef.current?.querySelectorAll("path");
     if (!paths) return;
     paths.forEach((p) => {
-      p.style.fill = "#f2e9e6";
+      p.style.fill = "#d6dcea"; // default fill color
       p.style.stroke = "#ffffff";
       p.style.strokeWidth = "1";
       p.style.transition = "fill 0.25s ease";
@@ -60,9 +59,7 @@ const USMap = () => {
   };
 
   const handleMouseLeave = (e) => {
-    // If cursor is still inside the SVG, do nothing
     if (svgRef.current && svgRef.current.contains(e.relatedTarget)) return;
-    // Otherwise, clear hovered state and tooltip
     setHoveredState(null);
   };
 
@@ -72,31 +69,16 @@ const USMap = () => {
     if (state) navigate(`/aed-laws/${state.slug}`);
   };
 
-  const colorPalette = [
-    "#FADADD",
-    "#F5C6AA",
-    "#F2B6A0",
-    "#F0AFA0",
-    "#F3CBBE",
-    "#FADCD9",
-    "#F7C6C7",
-    "#F9D6C1",
-    "#F6B7A9",
-    "#EFB7B3",
-  ];
-
-  const getRandomColor = (index) => colorPalette[index % colorPalette.length];
-
   return (
     <div
       ref={containerRef}
-      className="relative flex justify-center items-center bg-transparent overflow-hidden py-12 px-8"
+      className="relative flex justify-center items-center bg-transparent overflow-visible py-12 px-8"
     >
       <div
         className="relative w-full max-w-[1500px] -translate-x-10 sm:-translate-x-16 md:-translate-x-20 lg:-translate-x-28"
         style={{
           transformOrigin: "center",
-          scale: "1.25", // makes map larger
+          scale: "1.25",
         }}
       >
         <svg
@@ -105,7 +87,7 @@ const USMap = () => {
           xmlns="http://www.w3.org/2000/svg"
           className="w-full h-auto"
           style={{ cursor: "pointer" }}
-          onMouseLeave={handleMouseLeave} // ✅ ensure this is here
+          onMouseLeave={handleMouseLeave}
         >
           <USMapSVG
             className="w-full h-auto"
@@ -114,36 +96,28 @@ const USMap = () => {
             onMouseLeave={handleMouseLeave}
             onClick={handleClick}
           />
-          {/* Path styles */}
-          <style>
-            {`
+
+          {/* Styles */}
+          <style>{`
             path {
+              fill: #d6dcea !important; /* default background */
               transition: fill 0.25s ease;
               stroke: #fff;
               stroke-width: 1;
             }
             path:hover {
-              fill: #e3b5aa !important;
+              fill: #111686 !important; /* hover color */
             }
-          `}
-          </style>
+          `}</style>
 
-          {/* Assign random color to each state */}
-          {Array.from({ length: 51 }).map((_, i) => (
-            <style key={i}>{`path:nth-of-type(${
-              i + 1
-            }) { fill: ${getRandomColor(i)}; }`}</style>
-          ))}
-
-          {/* Add text labels */}
+          {/* Labels */}
           {labelPositions.map((pos) => {
             const st = states.find(
               (s) => s.abbreviation === pos.id || s.name === pos.id
             );
             if (!st) return null;
-            const shortLabel =
-              st.abbreviation ||
-              `${st.name[0]}${st.name[st.name.length - 1]}`.toUpperCase();
+            const shortLabel = st.abbreviation;
+
             return (
               <text
                 key={pos.id}
@@ -151,7 +125,7 @@ const USMap = () => {
                 y={pos.y}
                 textAnchor="middle"
                 fontSize="7"
-                fill="#4a3e39"
+                fill={hoveredState?.abbreviation === pos.id ? "#ffffff" : "#4a3e39"}
                 fontWeight="600"
                 pointerEvents="none"
               >
@@ -161,14 +135,12 @@ const USMap = () => {
           })}
         </svg>
 
-        {/* Tooltip */}
         {hoveredState && (
           <div
-            className="absolute bg-black text-white text-xs px-2 py-1 rounded shadow-md"
+            className="fixed z-50 bg-white text-black border border-black px-2 py-1 rounded text-xs pointer-events-none"
             style={{
               top: tooltip.y,
               left: tooltip.x,
-              pointerEvents: "none",
               transform: "translate(-50%, -100%)",
               whiteSpace: "nowrap",
             }}
