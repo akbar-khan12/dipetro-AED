@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Search, MapPin } from "lucide-react";
-import { getStatesList } from "../api/aedLawsApi"; // same API as StatesListPage
+import { getStatesList } from "../../api/aedLawsApi"; // same API as StatesListPage
 
 const Header = () => {
   const [states, setStates] = useState([]);
